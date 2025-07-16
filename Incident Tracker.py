@@ -6,7 +6,7 @@ from fuzzywuzzy import fuzz
 DATA_FILE = "Incident Details.xlsx"
 ADMIN_PASSWORD = "Arpan@Nielsen123"
 
-# Session state for admin login and navigation
+# Session state initialization
 if "admin_logged_in" not in st.session_state:
     st.session_state.admin_logged_in = False
 if "search_results" not in st.session_state:
@@ -20,12 +20,13 @@ def load_data():
     return pd.read_excel(DATA_FILE, engine="openpyxl")
 
 # Fuzzy search
-def search_incidents(df, query, threshold=80):
+def search_incidents(df, query, selected_callers):
     results = []
-    for _, row in df.iterrows():
+    filtered_df = df[df["Caller"].isin(selected_callers)] if selected_callers else df
+    for _, row in filtered_df.iterrows():
         combined_text = f"{row['Issue Summary']} {row['Issue Description']}"
         score = fuzz.partial_ratio(query.lower(), str(combined_text).lower())
-        if score >= threshold:
+        if score >= 80:
             results.append(row)
     return results
 
@@ -47,32 +48,26 @@ with st.sidebar:
             st.session_state.admin_logged_in = False
             st.experimental_rerun()
 
-    # Caller filter (always visible)
-    st.markdown("---")
-    st.subheader("📌 Filter by Caller")
-    try:
-        df_all = load_data()
-        callers = sorted(df_all["Caller"].dropna().unique())
-        selected_caller = st.selectbox("Select a caller", ["All"] + callers)
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        st.stop()
-
 # Main UI
 st.title("📋 Incident Similarity Checker")
 
-# Filtered data
-df = df_all.copy()
-if selected_caller != "All":
-    df = df[df["Caller"] == selected_caller]
+# Load and prepare data
+try:
+    df_all = load_data()
+except Exception as e:
+    st.error(f"Error loading data: {e}")
+    st.stop()
 
-# Search bar
+# Search bar and caller filter
 query = st.text_input("🔍 Describe your issue:")
+callers = sorted(df_all["Caller"].dropna().unique())
+selected_callers = st.multiselect("Filter by Caller (optional)", callers)
+
 if st.button("Search"):
     if not query.strip():
         st.warning("Please enter a valid issue description.")
     else:
-        st.session_state.search_results = search_incidents(df, query)
+        st.session_state.search_results = search_incidents(df_all, query, selected_callers)
         st.session_state.current_index = 0
 
 # Display search results
