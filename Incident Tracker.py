@@ -39,17 +39,20 @@ with st.sidebar:
         if password == ADMIN_PASSWORD:
             st.session_state.admin_logged_in = True
             st.success("Logged in as admin.")
+            st.experimental_rerun()  # Force rerun to show upload UI
     else:
         st.success("✅ Logged in as admin")
-        uploaded_file = st.file_uploader("Upload new incident file", type=["xlsx"])
-        if uploaded_file:
+        uploaded_file = st.file_uploader("Upload new incident file", type=["xlsx"], key="admin_upload")
+        if uploaded_file is not None:
             with open(DATA_FILE, "wb") as f:
                 f.write(uploaded_file.read())
             st.success("File uploaded successfully. Please refresh the app.")
 
         if st.button("Logout"):
             st.session_state.admin_logged_in = False
-            st.rerun()
+            st.session_state.admin_upload = None
+            st.experimental_rerun()
+
 
 
 # Main UI
