@@ -33,19 +33,24 @@ def search_incidents(df, query, selected_callers):
 # Sidebar: Admin Panel
 with st.sidebar:
     st.header("🔐 Admin Panel")
+
     if not st.session_state.admin_logged_in:
         password = st.text_input("Enter admin password", type="password")
         if password == ADMIN_PASSWORD:
             st.session_state.admin_logged_in = True
             st.success("Logged in as admin.")
     else:
+        st.success("✅ Logged in as admin")
         uploaded_file = st.file_uploader("Upload new incident file", type=["xlsx"])
         if uploaded_file:
             with open(DATA_FILE, "wb") as f:
                 f.write(uploaded_file.read())
             st.success("File uploaded successfully. Please refresh the app.")
+
         if st.button("Logout"):
             st.session_state.admin_logged_in = False
+            st.rerun()
+
 
 # Main UI
 st.title("📋 Incident Similarity Checker")
