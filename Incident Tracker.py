@@ -21,14 +21,19 @@ def load_data():
 
 # Fuzzy search
 def search_incidents(df, query, selected_callers):
-    results = []
-    filtered_df = df[df["Caller"].isin(selected_callers)] if selected_callers else df
-    for _, row in filtered_df.iterrows():
-        combined_text = f"{row['Issue Summary']} {row['Issue Description']}"
-        score = fuzz.partial_ratio(query.lower(), str(combined_text).lower())
-        if score >= 80:
-            results.append(row)
-    return results
+    if query.strip():
+        results = []
+        filtered_df = df[df["Caller"].isin(selected_callers)] if selected_callers else df
+        for _, row in filtered_df.iterrows():
+            combined_text = f"{row['Issue Summary']} {row['Issue Description']}"
+            score = fuzz.partial_ratio(query.lower(), str(combined_text).lower())
+            if score >= 80:
+                results.append(row)
+        return results
+    elif selected_callers:
+        return df[df["Caller"].isin(selected_callers)].to_dict(orient="records")
+    else:
+        return []
 
 # Sidebar: Admin Panel
 with st.sidebar:
@@ -70,11 +75,8 @@ callers = sorted(df_all["Caller"].dropna().unique())
 selected_callers = st.multiselect("Filter by Caller (optional)", callers)
 
 if st.button("Search"):
-    if not query.strip():
-        st.warning("Please enter a valid issue description.")
-    else:
-        st.session_state.search_results = search_incidents(df_all, query, selected_callers)
-        st.session_state.current_index = 0
+    st.session_state.search_results = search_incidents(df_all, query, selected_callers)
+    st.session_state.current_index = 0
 
 # Display search results
 if st.session_state.search_results:
