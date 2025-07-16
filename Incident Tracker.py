@@ -36,24 +36,23 @@ with st.sidebar:
 
     if not st.session_state.admin_logged_in:
         password = st.text_input("Enter admin password", type="password")
-        if password == ADMIN_PASSWORD:
-            st.session_state.admin_logged_in = True
-            st.success("Logged in as admin.")
-            st.experimental_rerun()  # Force rerun to show upload UI
+        if st.button("Login"):
+            if password == ADMIN_PASSWORD:
+                st.session_state.admin_logged_in = True
+                st.success("✅ Logged in as admin.")
+            else:
+                st.error("❌ Incorrect password.")
     else:
         st.success("✅ Logged in as admin")
-        uploaded_file = st.file_uploader("Upload new incident file", type=["xlsx"], key="admin_upload")
-        if uploaded_file is not None:
+        uploaded_file = st.file_uploader("Upload new incident file", type=["xlsx"])
+        if uploaded_file:
             with open(DATA_FILE, "wb") as f:
                 f.write(uploaded_file.read())
             st.success("File uploaded successfully. Please refresh the app.")
 
         if st.button("Logout"):
             st.session_state.admin_logged_in = False
-            st.session_state.admin_upload = None
-            st.experimental_rerun()
-
-
+            st.session_state.pop("admin_upload", None)
 
 # Main UI
 st.title("📋 Incident Similarity Checker")
